@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ProVMS | Premium Vendor Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --secondary: #6366f1;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --glass: rgba(30, 41, 59, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            padding-bottom: 70px; /* Space for mobile nav */
+        }
+
+        /* --- UI Elements --- */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn:active { transform: scale(0.95); }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-paid { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .badge-due { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .badge-partial { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+        /* --- Layout --- */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 260px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border);
+            padding: 30px 20px;
+            z-index: 100;
+            transition: 0.3s;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 40px;
+            max-width: 1400px;
+        }
+
+        /* --- Navigation --- */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            color: var(--text-dim);
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: 0.3s;
+        }
+
+        .nav-link.active {
+            background: rgba(14, 165, 233, 0.15);
+            color: var(--primary);
+        }
+
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+
+        /* --- Dashboard Stats --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, #1e293b, #111827);
+            padding: 24px;
+            border-radius: 20px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-val { font-size: 24px; font-weight: 700; margin-top: 5px; }
+        .stat-label { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- Responsive Table --- */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 15px; color: var(--text-dim); font-size: 13px; border-bottom: 1px solid var(--border); }
+        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 14px; }
+
+        /* --- Forms --- */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-dim); }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: white;
+            outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 600px;
+            border-radius: 24px;
+            padding: 30px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* --- Mobile Styles --- */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 20px; }
+            .bottom-nav { display: flex; }
+            .desktop-only { display: none; }
+            .card-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+            .vendor-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 15px;
+            }
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .page-section { display: none; animation: fadeIn 0.4s ease-out; }
+        .page-section.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <h2 style="color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="shield-check"></i> ProVMS
+        </h2>
+        <a href="#" class="nav-link active" onclick="showPage('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        <a href="#" class="nav-link" onclick="showPage('vendors')"><i data-lucide="users"></i> Vendors</a>
+        <a href="#" class="nav-link" onclick="showPage('purchases')"><i data-lucide="shopping-cart"></i> Purchases</a>
+        <a href="#" class="nav-link" onclick="showPage('payments')"><i data-lucide="credit-card"></i> Payments</a>
+        <a href="#" class="nav-link" onclick="showPage('reports')"><i data-lucide="bar-chart-3"></i> Reports</a>
+    </nav>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-link active" onclick="showPage('dashboard')"><i data-lucide="home"></i></a>
+        <a href="#" class="nav-link" onclick="showPage('vendors')"><i data-lucide="users"></i></a>
+        <a href="#" class="nav-link" onclick="showPage('purchases')"><i data-lucide="plus-square"></i></a>
+        <a href="#" class="nav-link" onclick="showPage('payments')"><i data-lucide="wallet"></i></a>
+    </nav>
+    
+
+    <main class="main-content">
+        
+        <section id="dashboard" class="page-section active">
+            <header style="margin-bottom: 30px;">
+                <h1>Business Overview</h1>
+                <p style="color: var(--text-dim)">Real-time vendor analytics</p>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Vendors</div>
+                    <div class="stat-val" id="stat-vendors">0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--secondary)">
+                    <div class="stat-label">Total Purchases</div>
+                    <div class="stat-val" id="stat-purchases">₹0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--success)">
+                    <div class="stat-label">Total Paid</div>
+                    <div class="stat-val" id="stat-paid">₹0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--danger)">
+                    <div class="stat-label">Outstanding Due</div>
+                    <div class="stat-val" id="stat-due">₹0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Recent Activity</h3>
+                <div class="table-container">
+                    <table id="recent-activity-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vendor</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="vendors" class="page-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h1>Vendors</h1>
+                <button class="btn btn-primary" onclick="openModal('vendorModal')"><i data-lucide="user-plus"></i> Add New</button>
+            </div>
+            
+            <div id="vendor-list-container">
+                <div class="table-container desktop-only">
+                    <table id="vendor-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Vendor Name</th>
+                                <th>Shop Name</th>
+                                <th>Balance</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="vendor-cards" class="card-grid"></div>
+            </div>
+        </section>
+
+        <section id="purchases" class="page-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h1>Purchases</h1>
+                <button class="btn btn-primary" onclick="openModal('purchaseModal')"><i data-lucide="plus-circle"></i> New Purchase</button>
+            </div>
+            <div class="card">
+                <div class="table-container">
+                    <table id="purchase-table">
+                        <thead>
+                            <tr>
+                                <th>RecNo</th>
+                                <th>Date</th>
+                                <th>Vendor</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>View</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="payments" class="page-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h1>Payments</h1>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-outline" onclick="openModal('advanceModal')">Advance Pay</button>
+                    <button class="btn btn-primary" onclick="openModal('installmentModal')">Add Installment</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-container">
+                    <table id="payment-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vendor</th>
+                                <th>RecNo</th>
+                                <th>Amount</th>
+                                <th>Mode</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="vendorDetail" class="page-section">
+            <button class="btn btn-outline" onclick="showPage('vendors')" style="margin-bottom: 20px;"><i data-lucide="arrow-left"></i> Back</button>
+            <div id="vendor-profile-content"></div>
+        </section>
+
+    </main>
+
+    <div id="vendorModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Add New Vendor</h3>
+            <form id="vendorForm" onsubmit="saveVendor(event)">
+                <div class="form-group">
+                    <label>Vendor Name</label>
+                    <input type="text" id="vName" required>
+                </div>
+                <div class="form-group">
+                    <label>Shop Name</label>
+                    <input type="text" id="vShop" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="vPhone" required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline" style="flex:1" onclick="closeModal('vendorModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1">Save Vendor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="purchaseModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <h3>New Purchase Order</h3>
+            <form id="purchaseForm" onsubmit="savePurchase(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Select Vendor</label>
+                        <select id="pVendor" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Purchase Date</label>
+                        <input type="date" id="pDate" required>
+                    </div>
+                </div>
+                
+                <div id="item-rows-container" style="margin-top: 20px;">
+                    <label>Items List</label>
+                    <div id="items-list">
+                        </div>
+                    <button type="button" class="btn btn-outline" onclick="addPurchaseItemRow()" style="width: 100%; margin-top: 10px;">+ Add Item</button>
+                </div>
+
+                <div style="margin-top: 20px; text-align: right; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <h3 id="pGrandTotalDisplay">Total: ₹0</h3>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline" style="flex:1" onclick="closeModal('purchaseModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1">Save Purchase</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="installmentModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Pay Installment</h3>
+            <form id="installmentForm" onsubmit="saveInstallment(event)">
+                <div class="form-group">
+                    <label>Vendor</label>
+                    <select id="iVendor" onchange="loadVendorPurchases(this.value)" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Select Bill (RecNo)</label>
+                    <select id="iRecNo" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Amount to Pay</label>
+                    <input type="number" id="iAmount" required>
+                </div>
+                <div class="form-group">
+                    <label>Mode</label>
+                    <select id="iMode">
+                        <option>Cash</option>
+                        <option>UPI</option>
+                        <option>Bank Transfer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" id="iRemarks">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Submit Payment</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="advanceModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Add Advance Payment</h3>
+            <form id="advanceForm" onsubmit="saveAdvance(event)">
+                <div class="form-group">
+                    <label>Vendor</label>
+                    <select id="aVendor" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="aAmount" required>
+                </div>
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" id="aRemarks">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Save Advance</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="recNoModal" class="modal-overlay">
+        <div class="modal-content" id="recNoModalContent"></div>
+    </div>
+
+    <script>
+        // --- DATA INITIALIZATION ---
+        let data = JSON.parse(localStorage.getItem('vms_db')) || {
+            vendors: [],
+            purchases: [],
+            payments: [],
+            ledger: [] // {date, vendorId, type, recNo, debit, credit, balance}
+        };
+
+        function saveDb() {
+            localStorage.setItem('vms_db', JSON.stringify(data));
+            renderDashboard();
+        }
+
+        // --- NAVIGATION ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(pageId).classList.add('active');
+            // Update active state in navs
+            document.querySelectorAll(`.nav-link[onclick*="${pageId}"]`).forEach(n => n.classList.add('active'));
+
+            if(pageId === 'dashboard') renderDashboard();
+            if(pageId === 'vendors') renderVendors();
+            if(pageId === 'purchases') renderPurchases();
+            if(pageId === 'payments') renderPayments();
+            
+            window.scrollTo(0,0);
+        }
+
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex'; 
+            populateDropdowns();
+            if(id === 'purchaseModal' && document.getElementById('items-list').innerHTML === '') {
+                addPurchaseItemRow();
+            }
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // --- LOGIC: VENDORS ---
+        function saveVendor(e) {
+            e.preventDefault();
+            const vendor = {
+                id: 'VND-' + Date.now(),
+                name: document.getElementById('vName').value,
+                shop: document.getElementById('vShop').value,
+                phone: document.getElementById('vPhone').value,
+                balance: 0,
+                advance: 0
+            };
+            data.vendors.push(vendor);
+            saveDb();
+            closeModal('vendorModal');
+            renderVendors();
+            e.target.reset();
+        }
+
+        function renderVendors() {
+            const tableBody = document.querySelector('#vendor-table tbody');
+            const cardGrid = document.getElementById('vendor-cards');
+            tableBody.innerHTML = '';
+            cardGrid.innerHTML = '';
+
+            data.vendors.forEach(v => {
+                const bal = getVendorSummary(v.id);
+                const row = `<tr>
+                    <td>${v.id.split('-')[1].slice(-4)}</td>
+                    <td><b>${v.name}</b></td>
+                    <td>${v.shop}</td>
+                    <td>₹${bal.currentBalance}</td>
+                    <td><button class="btn btn-outline" onclick="viewVendor('${v.id}')">View</button></td>
+                </tr>`;
+                tableBody.innerHTML += row;
+
+                const card = `<div class="vendor-card" onclick="viewVendor('${v.id}')">
+                    <div style="display:flex; justify-content:space-between">
+                        <b>${v.name}</b>
+                        <span style="color:var(--primary)">#${v.id.split('-')[1].slice(-4)}</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-dim)">${v.shop}</div>
+                    <div style="margin-top:10px; font-weight:700">Bal: ₹${bal.currentBalance}</div>
+                </div>`;
+                cardGrid.innerHTML += card;
+            });
+            lucide.createIcons();
+        }
+
+        // --- LOGIC: PURCHASES ---
+        function addPurchaseItemRow() {
+            const container = document.getElementById('items-list');
+            const rowId = Date.now();
+            const div = document.createElement('div');
+            div.className = 'item-row';
+            div.style = "display:grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap:10px; margin-bottom:10px;";
+            div.innerHTML = `
+                <input type="text" placeholder="Item Name" class="i-name" required>
+                <input type="number" placeholder="Qty" class="i-qty" oninput="calcPurchaseTotal()" required>
+                <input type="number" placeholder="Rate" class="i-rate" oninput="calcPurchaseTotal()" required>
+                <input type="text" placeholder="Total" class="i-total" readonly>
+                <button type="button" onclick="this.parentElement.remove(); calcPurchaseTotal();" style="background:none; border:none; color:var(--danger)"><i data-lucide="trash-2"></i></button>
+            `;
+            container.appendChild(div);
+            lucide.createIcons();
+        }
+
+        function calcPurchaseTotal() {
+            let grand = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const q = row.querySelector('.i-qty').value || 0;
+                const r = row.querySelector('.i-rate').value || 0;
+                const total = q * r;
+                row.querySelector('.i-total').value = total;
+                grand += total;
+            });
+            document.getElementById('pGrandTotalDisplay').innerText = 'Total: ₹' + grand;
+            return grand;
+        }
+
+        function savePurchase(e) {
+            e.preventDefault();
+            const vendorId = document.getElementById('pVendor').value;
+            const grandTotal = calcPurchaseTotal();
+            const recNo = 'REC-' + Math.floor(1000 + Math.random() * 9000);
+            
+            const items = [];
+            document.querySelectorAll('.item-row').forEach(row => {
+                items.push({
+                    name: row.querySelector('.i-name').value,
+                    qty: row.querySelector('.i-qty').value,
+                    rate: row.querySelector('.i-rate').value,
+                    total: row.querySelector('.i-total').value
+                });
+            });
+
+            const purchase = {
+                recNo,
+                vendorId,
+                date: document.getElementById('pDate').value,
+                items,
+                grandTotal,
+                paid: 0,
+                status: 'Due'
+            };
+
+            // LEDGER: Add Purchase Debit
+            addToLedger(purchase.date, vendorId, 'Purchase', recNo, grandTotal, 0);
+            
+            // LOGIC: Auto-adjust from Advance Balance
+            const summary = getVendorSummary(vendorId);
+            if(summary.advanceBalance > 0) {
+                const adjustAmount = Math.min(summary.advanceBalance, grandTotal);
+                purchase.paid = adjustAmount;
+                purchase.status = adjustAmount === grandTotal ? 'Full Paid' : 'Partial Paid';
+                
+                // LEDGER: Credit the adjustment
+                addToLedger(purchase.date, vendorId, 'Advance Adjusted', recNo, 0, adjustAmount);
+            }
+
+            data.purchases.push(purchase);
+            saveDb();
+            closeModal('purchaseModal');
+            showPage('purchases');
+        }
+
+        // --- LOGIC: PAYMENTS & ADVANCE ---
+        function saveInstallment(e) {
+            e.preventDefault();
+            const vendorId = document.getElementById('iVendor').value;
+            const recNo = document.getElementById('iRecNo').value;
+            const amount = parseFloat(document.getElementById('iAmount').value);
+            
+            const payment = {
+                id: Date.now(),
+                vendorId,
+                recNo,
+                amount,
+                date: new Date().toISOString().split('T')[0],
+                mode: document.getElementById('iMode').value,
+                remarks: document.getElementById('iRemarks').value
+            };
+
+            data.payments.push(payment);
+            
+            // Update purchase record paid status
+            const p = data.purchases.find(x => x.recNo === recNo);
+            p.paid += amount;
+            p.status = p.paid >= p.grandTotal ? 'Full Paid' : 'Partial Paid';
+
+            addToLedger(payment.date, vendorId, 'Payment', recNo, 0, amount);
+            
+            saveDb();
+            closeModal('installmentModal');
+            showPage('payments');
+        }
+
+        function saveAdvance(e) {
+            e.preventDefault();
+            const vendorId = document.getElementById('aVendor').value;
+            const amount = parseFloat(document.getElementById('aAmount').value);
+            const date = new Date().toISOString().split('T')[0];
+
+            data.payments.push({
+                id: Date.now(),
+                vendorId,
+                recNo: 'ADVANCE',
+                amount,
+                date,
+                mode: 'Direct',
+                remarks: document.getElementById('aRemarks').value
+            });
+
+            addToLedger(date, vendorId, 'Advance', 'N/A', 0, amount);
+            
+            saveDb();
+            closeModal('advanceModal');
+            showPage('payments');
+        }
+
+        // --- LEDGER ENGINE ---
+        function addToLedger(date, vendorId, type, recNo, debit, credit) {
+            data.ledger.push({ date, vendorId, type, recNo, debit, credit });
+        }
+
+        function getVendorSummary(vendorId) {
+            const vLedger = data.ledger.filter(l => l.vendorId === vendorId);
+            let totalPurchase = 0;
+            let totalPaid = 0;
+            let balance = 0;
+
+            vLedger.forEach(entry => {
+                totalPurchase += entry.debit;
+                totalPaid += entry.credit;
+                balance += (entry.debit - entry.credit);
+            });
+
+            return {
+                totalPurchase,
+                totalPaid,
+                currentBalance: balance > 0 ? balance : 0,
+                advanceBalance: balance < 0 ? Math.abs(balance) : 0
+            };
+        }
+
+        // --- RENDERING HELPERS ---
+        function populateDropdowns() {
+            const selects = ['pVendor', 'iVendor', 'aVendor'];
+            selects.forEach(s => {
+                const el = document.getElementById(s);
+                el.innerHTML = '<option value="">Select Vendor</option>';
+                data.vendors.forEach(v => {
+                    el.innerHTML += `<option value="${v.id}">${v.name}</option>`;
+                });
+            });
+        }
+
+        function loadVendorPurchases(vId) {
+            const sel = document.getElementById('iRecNo');
+            sel.innerHTML = '<option value="">Select Bill</option>';
+            data.purchases.filter(p => p.vendorId === vId && p.status !== 'Full Paid').forEach(p => {
+                sel.innerHTML += `<option value="${p.recNo}">${p.recNo} (Due: ₹${p.grandTotal - p.paid})</option>`;
+            });
+        }
+
+        function renderPurchases() {
+            const tbody = document.querySelector('#purchase-table tbody');
+            tbody.innerHTML = '';
+            data.purchases.forEach(p => {
+                const v = data.vendors.find(x => x.id === p.vendorId);
+                const statusCls = p.status === 'Full Paid' ? 'badge-paid' : (p.status === 'Due' ? 'badge-due' : 'badge-partial');
+                tbody.innerHTML += `<tr>
+                    <td><b>${p.recNo}</b></td>
+                    <td>${p.date}</td>
+                    <td>${v ? v.name : 'Unknown'}</td>
+                    <td>₹${p.grandTotal}</td>
+                    <td><span class="badge ${statusCls}">${p.status}</span></td>
+                    <td><button class="btn btn-outline" onclick="viewRecNo('${p.recNo}')"><i data-lucide="eye"></i></button></td>
+                </tr>`;
+            });
+            lucide.createIcons();
+        }
+
+        function renderPayments() {
+            const tbody = document.querySelector('#payment-table tbody');
+            tbody.innerHTML = '';
+            data.payments.slice().reverse().forEach(p => {
+                const v = data.vendors.find(x => x.id === p.vendorId);
+                tbody.innerHTML += `<tr>
+                    <td>${p.date}</td>
+                    <td>${v ? v.name : 'N/A'}</td>
+                    <td>${p.recNo}</td>
+                    <td style="color:var(--success)">₹${p.amount}</td>
+                    <td>${p.mode}</td>
+                </tr>`;
+            });
+        }
+
+        function viewRecNo(recNo) {
+            const p = data.purchases.find(x => x.recNo === recNo);
+            const v = data.vendors.find(x => x.id === p.vendorId);
+            const payments = data.payments.filter(pay => pay.recNo === recNo);
+            
+            let itemsHtml = p.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>₹${i.total}</td></tr>`).join('');
+            let payHtml = payments.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; padding:5px 0; border-bottom:1px solid #334155"><span>${i.date} (${i.mode})</span> <span>₹${i.amount}</span></div>`).join('');
+
+            document.getElementById('recNoModalContent').innerHTML = `
+                <div style="text-align:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:15px;">
+                    <h2>INVOICE SUMMARY</h2>
+                    <p>${p.recNo}</p>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px; margin-bottom:20px;">
+                    <div><b>Vendor:</b><br>${v.name}<br>${v.shop}</div>
+                    <div style="text-align:right"><b>Date:</b><br>${p.date}</div>
+                </div>
+                <table>
+                    <thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
+                    <tbody>${itemsHtml}</tbody>
+                </table>
+                <div style="margin-top:20px; text-align:right;">
+                    <p>Grand Total: ₹${p.grandTotal}</p>
+                    <p style="color:var(--success)">Total Paid: ₹${p.paid}</p>
+                    <p style="color:var(--danger)">Remaining: ₹${p.grandTotal - p.paid}</p>
+                </div>
+                <div style="margin-top:20px;">
+                    <h4>Installment History</h4>
+                    ${payHtml || '<p style="font-size:12px; color:var(--text-dim)">No installments yet.</p>'}
+                </div>
+                <button class="btn btn-primary" style="width:100%; margin-top:30px;" onclick="closeModal('recNoModal')">Close</button>
+            `;
+            openModal('recNoModal');
+        }
+
+        function viewVendor(vId) {
+            const v = data.vendors.find(x => x.id === vId);
+            const summary = getVendorSummary(vId);
+            const vLedger = data.ledger.filter(l => l.vendorId === vId);
+            
+            let runningBal = 0;
+            const ledgerRows = vLedger.map(l => {
+                runningBal += (l.debit - l.credit);
+                return `<tr>
+                    <td>${l.date}</td>
+                    <td>${l.type}</td>
+                    <td>${l.recNo}</td>
+                    <td style="color:var(--danger)">${l.debit > 0 ? '₹'+l.debit : '-'}</td>
+                    <td style="color:var(--success)">${l.credit > 0 ? '₹'+l.credit : '-'}</td>
+                    <td><b>₹${runningBal}</b></td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('vendor-profile-content').innerHTML = `
+                <div class="card" style="background: linear-gradient(135deg, #1e293b, #0f172a)">
+                    <h2>${v.name}</h2>
+                    <p style="color:var(--primary)">${v.shop} | ${v.phone}</p>
+                    <div class="stats-grid" style="margin-top:20px;">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Purchase</div>
+                            <div class="stat-val">₹${summary.totalPurchase}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Paid</div>
+                            <div class="stat-val">₹${summary.totalPaid}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Balance Due</div>
+                            <div class="stat-val" style="color:var(--danger)">₹${summary.currentBalance}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Advance</div>
+                            <div class="stat-val" style="color:var(--success)">₹${summary.advanceBalance}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Complete Ledger</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Date</th><th>Type</th><th>RecNo</th><th>Debit</th><th>Credit</th><th>Running</th></tr></thead>
+                            <tbody>${ledgerRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            showPage('vendorDetail');
+        }
+
+        function renderDashboard() {
+            let totalP = 0, totalPd = 0, totalDue = 0, totalAdv = 0;
+            data.vendors.forEach(v => {
+                const s = getVendorSummary(v.id);
+                totalP += s.totalPurchase;
+                totalPd += s.totalPaid;
+                totalDue += s.currentBalance;
+                totalAdv += s.advanceBalance;
+            });
+
+            document.getElementById('stat-vendors').innerText = data.vendors.length;
+            document.getElementById('stat-purchases').innerText = '₹' + totalP;
+            document.getElementById('stat-paid').innerText = '₹' + totalPd;
+            document.getElementById('stat-due').innerText = '₹' + totalDue;
+
+            const recentTbody = document.querySelector('#recent-activity-table tbody');
+            recentTbody.innerHTML = '';
+            data.ledger.slice(-5).reverse().forEach(l => {
+                const v = data.vendors.find(x => x.id === l.vendorId);
+                recentTbody.innerHTML += `<tr>
+                    <td>${l.date}</td>
+                    <td>${v.name}</td>
+                    <td>${l.type}</td>
+                    <td>₹${l.debit || l.credit}</td>
+                </tr>`;
+            });
+        }
+
+        // Initialize Lucide Icons & Dashboard
+        lucide.createIcons();
+        renderDashboard();
+
+        
+    </script>
+</body>
+</html>
